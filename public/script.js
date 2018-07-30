@@ -4,12 +4,12 @@ function toggleBookSeries(name)
 {
 	if(isOpen[name])
 	{
-		$("#series-" + name).slideUp();
+		$("#series-" + name).hide(0);
 		$("#book-view-" + name).text("(view)");
 	}
 	else
 	{
-		$("#series-" + name).slideDown();
+		$("#series-" + name).show(0);
 		$("#book-view-" + name).text("(hide)");
 	}
 

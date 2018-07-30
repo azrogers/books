@@ -3,51 +3,11 @@ var fs = require("fs"),
     sort = require("javascript-natural-sort"),
 	_util = require("./util");
 
-// get all the books
-// includeUnsorted - should we include books that have no metadata? default is false
-// restricted - should we get books that are restricted or regular books? default is false (regular)
-function getBooks(nconf, includeUnsorted, restricted)
+function parseBookInfo(nconf, includeUnsorted, restricted, books)
 {
-	if(includeUnsorted === undefined) includeUnsorted = false;
-	if(restricted === undefined) restricted = false;
-
-	var files = [];
-	if(restricted)
-		files = fs.readdirSync(nconf.get("restricted_path"));
-	else
-		files = fs.readdirSync(nconf.get("path"));
-
-	var books = {};
-
-	// go file by file through the data folder
-	// we do this instead of parsing through books.json first,
-	// so that we can add files that aren't in books.json
-	files.forEach(function(f) {
-		var ext = path.extname(f);
-		// ignore books.json!
-		if(ext == ".json") return;
-
-		var name = path.basename(f, ext);
-		ext = ext.substr(1);
-		// if we've already added this book, add a new extension
-		if(books[name])
-		{
-			books[name].extensions.push(ext);
-			return;
-		}
-
-		books[name] = {
-			name: name,
-			extensions: [ext],
-			file: name,
-			unsorted: false,
-			category: "Other",
-			series: null
-		};
-	});
-
 	// read books.json
 	var info = {};
+
 	if(restricted)
 		info = JSON.parse(fs.readFileSync(nconf.get("restricted_path") + "/books.json"));
 	else
@@ -77,8 +37,6 @@ function getBooks(nconf, includeUnsorted, restricted)
 			book.category = bookInfo.category || "Other";
 			book.series = bookInfo.series || null;
 			book.seriesPos = bookInfo.seriesPos || 1;
-			if(book.name == "Eragon")
-				console.log(book);
 			return book;
 		})
 		.forEach((b) => {
@@ -103,9 +61,6 @@ function getBooks(nconf, includeUnsorted, restricted)
 			{
 				series[b.series] = [b];
 			}
-
-			if(b.series != null)
-				console.log(series[b.series]);
 		});
 
 	// check to see if we're missing any books
@@ -127,6 +82,7 @@ function getBooks(nconf, includeUnsorted, restricted)
 			extensions: [],
 			category: category,
 			key: k,
+			keyId: k.replace(/\s+/g, "_"),
 			series: null,
 			isSeries: true
 		};
@@ -147,11 +103,62 @@ function getBooks(nconf, includeUnsorted, restricted)
 	});
 
 	return {books: categories, categories: info._categories, series: series, unsortedCount: unsortedCount};
+}
+
+// get all the books
+// includeUnsorted - should we include books that have no metadata? default is false
+// restricted - should we get books that are restricted or regular books? default is false (regular)
+function getBooks(nconf, includeUnsorted, restricted, cb)
+{
+	if(includeUnsorted === undefined) includeUnsorted = false;
+	if(restricted === undefined) restricted = false;
+
+	var files = [];
+	if(restricted)
+		files = fs.readdirSync(nconf.get("restricted_path"));
+	else
+		files = fs.readdirSync(nconf.get("path"));
+
+	var books = {};
+
+	// go file by file through the data folder
+	// we do this instead of parsing through books.json first,
+	// so that we can add files that aren't in books.json
+	files.forEach(function(f) {
+		var ext = path.extname(f);
+		// ignore books.json!
+		if(ext == ".json" || ext == ".opf")
+		{
+			return;
+		}
+
+		var name = path.basename(f, ext);
+		ext = ext.substr(1);
+		// if we've already added this book, add a new extension
+		if(books[name])
+		{
+			books[name].extensions.push(ext);
+			return;
+		}
+
+		books[name] = {
+			name: name,
+			extensions: [ext],
+			file: name,
+			unsorted: false,
+			category: "Other",
+			series: null
+		};
+	});
+
+	cb(parseBookInfo(nconf, includeUnsorted, restricted, books));
 };
 
-function getUnsortedBooks(nconf, restricted)
+function getUnsortedBooks(nconf, restricted, cb)
 {
-	return getBooks(nconf, true, restricted).books["Other"].filter(b => b.unsorted);
+	getBooks(nconf, true, restricted, (res) => {
+		cb(res.books["Other"].filter(b => b.unsorted));
+	});
 }
 
 exports.getBooks = getBooks;

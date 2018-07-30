@@ -2,6 +2,8 @@ var crypto = require("crypto"),
 	express = require("express"),
 	path = require("path"),
 	fs = require("fs"),
+	xml2js = require("xml2js"),
+	async = require("async"),
 	_util = require("../util"),
 	books = require("../books");
 
@@ -11,9 +13,10 @@ module.exports = function(nconf)
 
 	// get book index
 	router.get("/", _util.checkAccount(nconf), function(req, res) {
-		var data = books.getBooks(nconf);
-		data.restricted = false;
-		_util.renderPage(req, res, nconf, "index", data);
+		books.getBooks(nconf, false, false, (data) => {
+			data.restricted = false;
+			_util.renderPage(req, res, nconf, "index", data);
+		});
 	});
 
 	router.get("/info", function(req, res) {
@@ -26,9 +29,10 @@ module.exports = function(nconf)
 	});
 
 	router.get("/restricted", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.RESTRICTED), (req, res) => {
-		var data = books.getBooks(nconf, false, true);
-		data.restricted = true;
-		_util.renderPage(req, res, nconf, "index", data);
+		books.getBooks(nconf, false, true, (books) => {
+			data.restricted = true;
+			_util.renderPage(req, res, nconf, "index", data);
+		});
 	});
 
 	router.get("/restricted/info", _util.checkAccount(nconf), (req, res) => {
@@ -84,16 +88,17 @@ module.exports = function(nconf)
 
 	// unsorted books
 	router.get("/unsorted.json", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.ADMIN), (req, res) => {
-		var unsorted = books.getUnsortedBooks(nconf, req.query.restricted);
-		var dict = {};
-		unsorted.forEach((b) => {
-			dict[b.name] = {
-				name: b.name,
-				authors: ["Unknown"],
-				category: "Other"
-			};
+		books.getUnsortedBooks(nconf, req.query.restricted, (unsorted) => {
+			var dict = {};
+			unsorted.forEach((b) => {
+				dict[b.name] = {
+					name: b.name,
+					authors: ["Unknown"],
+					category: "Other"
+				};
+			});
+			res.json(dict);
 		});
-		res.json(dict);
 	});
 
 	// a logged in admin user can visit this url to reload the config file
@@ -101,6 +106,46 @@ module.exports = function(nconf)
 	router.get("/reload", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.ADMIN), (req, res) => {
 		nconf.file({ file: "config.json" });
 		res.send("reloaded ok");
+	});
+
+	router.get("/opfs", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.ADMIN), (req, res) => {
+		var files = fs.readdirSync("data")
+			.filter((f) => f.substr(-3) == "opf");
+		var opfs = files
+			.map((f) => fs.readFileSync("data/" + f, "utf8"))
+			.map((f) => { return (cb) => xml2js.parseString(f, cb) });
+
+		async.parallel(opfs, (err, results) => {
+			if(err) throw err;
+
+			var books = {};
+			for(var i = 0; i < results.length; i++)
+			{
+				var filename = files[i];
+				var data = results[i];
+				var title = data.package.metadata[0]["dc:title"][0];
+				var authors = 
+					data.package.metadata[0]["dc:creator"]
+					.map((a) => {
+						var name = a["_"];
+						var parts = name.split(",");
+						if(parts.length == 2)
+						{
+							name = parts[1].trim() + " " + parts[0].trim();
+						}
+
+						return name;
+					});
+
+				books[path.basename(filename, ".opf")] = {
+					name: title,
+					authors: authors,
+					category: "Other"
+				};
+			}
+
+			res.json(books);
+		});
 	});
 
 	return router;

@@ -2,6 +2,7 @@
   "name": "books",
   "version": "1.0.0",
   "dependencies": {
+    "async": "^2.6.1",
     "body-parser": "^1.16.1",
     "cookie-parser": "^1.4.3",
     "express": "^4.14.1",
@@ -15,6 +16,7 @@
     "passport-dummy": "0.0.1",
     "pug": "^2.0.0-beta11",
     "request": "^2.85.0",
-    "serve-static": "^1.11.2"
+    "serve-static": "^1.11.2",
+    "xml2js": "^0.4.19"
   }
 }

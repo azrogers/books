@@ -20,9 +20,9 @@ block body
 										else
 											a(href=(nconf.get("url") + "/file/" + encodeURIComponent(book.file + "." + ext)))= ext
 								else
-									a(href="javascript:void(null)", onClick="toggleBookSeries('" + book.key + "')", id="book-view-" + book.key) (view)
+									a(href="javascript:void(null)", onClick="toggleBookSeries('" + book.keyId + "')", id="book-view-" + book.keyId) (view)
 						if book.isSeries
-							div.series-block(id="series-" + book.key)
+							div.series-block(id="series-" + book.keyId)
 								each bk in series[book.key]
 									div.book
 										span.series-book-number= bk.seriesPos || 1

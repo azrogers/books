@@ -94,7 +94,7 @@ exports.desafeBase64 = function desafeBase64(b64)
 // ex, "The Giver" -> "Giver"
 exports.sortTitle = function sortTitle(title)
 {
-	return title.replace(/^(The|An|A)\s/, "");
+	return title.toLowerCase().replace(/^(the|an|a)\s/, "");
 }
 
 exports.sanitizeName = function(p) 
