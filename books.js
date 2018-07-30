@@ -102,7 +102,12 @@ function parseBookInfo(nconf, includeUnsorted, restricted, books)
 		categories[c].sort((a, b) => sort(_util.sortTitle(a.name.toLowerCase()), _util.sortTitle(b.name.toLowerCase())));
 	});
 
-	return {books: categories, categories: info._categories, series: series, unsortedCount: unsortedCount};
+	var categoryIds = {};
+	info._categories.forEach((c) => {
+		categoryIds[c] = c.replace(/[^A-Za-z]/g, "_").toLowerCase();
+	});
+
+	return {books: categories, categories: info._categories.sort(), categoryIds: categoryIds, series: series, unsortedCount: unsortedCount};
 }
 
 // get all the books

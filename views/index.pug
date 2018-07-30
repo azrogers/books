@@ -4,11 +4,13 @@ block body
 		h2.restricted-title Restricted Section
 	div.books
 		each category in categories
-			div.category
-				h2.category-title= category
+			div.category(id="cat-" + categoryIds[category])
+				div.category-title
+					h2.category-title-text= category
+					span.category-hidden-display [-]
 				div.category-books
 					each book in (books[category] || []).filter((b) => b.series == null)
-						div.book
+						div.book(onClick=book.isSeries ? "toggleBookSeries('" + book.keyId + "')" : "")
 							span.book-title= book.name
 							if book.authors
 								span.book-authors= " by " + book.authors.join(", ")
@@ -20,7 +22,7 @@ block body
 										else
 											a(href=(nconf.get("url") + "/file/" + encodeURIComponent(book.file + "." + ext)))= ext
 								else
-									a(href="javascript:void(null)", onClick="toggleBookSeries('" + book.keyId + "')", id="book-view-" + book.keyId) (view)
+									span(id="book-view-" + book.keyId).book-hidden-display [+]
 						if book.isSeries
 							div.series-block(id="series-" + book.keyId)
 								each bk in series[book.key]

@@ -80,11 +80,24 @@ a:hover
 
 .category-title
 {
+	border-bottom: 1px solid #dddddd;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	cursor: pointer;
+}
+
+.category-title-text
+{
 	margin-bottom: 0;
 	padding-bottom: 5px;
 	font-size: 1.25em;
 	font-weight: normal;
-	border-bottom: 1px solid #dddddd;
+}
+
+.category-hidden-display, .book-hidden-display
+{
+	color: #000;
 }
 
 .header
