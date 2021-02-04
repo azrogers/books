@@ -1,7 +1,8 @@
 var fs = require("fs"),
     path = require("path"),
     sort = require("javascript-natural-sort"),
-	_util = require("./util");
+	_util = require("./util"),
+	aws = require("./aws");
 
 function parseBookInfo(nconf, includeUnsorted, restricted, books)
 {
@@ -118,45 +119,46 @@ function getBooks(nconf, includeUnsorted, restricted, cb)
 	if(includeUnsorted === undefined) includeUnsorted = false;
 	if(restricted === undefined) restricted = false;
 
-	var files = [];
-	if(restricted)
-		files = fs.readdirSync(nconf.get("restricted_path"));
-	else
-		files = fs.readdirSync(nconf.get("path"));
-
-	var books = {};
-
-	// go file by file through the data folder
-	// we do this instead of parsing through books.json first,
-	// so that we can add files that aren't in books.json
-	files.forEach(function(f) {
-		var ext = path.extname(f);
-		// ignore books.json!
-		if(ext == ".json" || ext == ".opf")
+	aws(nconf).listBooks((err, files) => {
+		if(err)
 		{
-			return;
+			return cb(err, null);
 		}
 
-		var name = path.basename(f, ext);
-		ext = ext.substr(1);
-		// if we've already added this book, add a new extension
-		if(books[name])
-		{
-			books[name].extensions.push(ext);
-			return;
-		}
+		var books = {};
 
-		books[name] = {
-			name: name,
-			extensions: [ext],
-			file: name,
-			unsorted: false,
-			category: "Other",
-			series: null
-		};
+		// go file by file through the data folder
+		// we do this instead of parsing through books.json first,
+		// so that we can add files that aren't in books.json
+		files.forEach(function(f) {
+			var ext = path.extname(f);
+			// ignore books.json!
+			if(ext == ".json" || ext == ".opf")
+			{
+				return;
+			}
+
+			var name = path.basename(f, ext);
+			ext = ext.substr(1);
+			// if we've already added this book, add a new extension
+			if(books[name])
+			{
+				books[name].extensions.push(ext);
+				return;
+			}
+
+			books[name] = {
+				name: name,
+				extensions: [ext],
+				file: name,
+				unsorted: false,
+				category: "Other",
+				series: null
+			};
+		});
+
+		cb(parseBookInfo(nconf, includeUnsorted, restricted, books));
 	});
-
-	cb(parseBookInfo(nconf, includeUnsorted, restricted, books));
 };
 
 function getUnsortedBooks(nconf, restricted, cb)

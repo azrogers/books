@@ -5,7 +5,8 @@ var crypto = require("crypto"),
 	xml2js = require("xml2js"),
 	async = require("async"),
 	_util = require("../util"),
-	books = require("../books");
+	books = require("../books"),
+	aws = require("../aws");
 
 module.exports = function(nconf)
 {
@@ -15,6 +16,11 @@ module.exports = function(nconf)
 	router.get("/", _util.checkAccount(nconf), function(req, res) {
 		books.getBooks(nconf, false, false, (data) => {
 			data.restricted = false;
+			var hash = crypto.createHash("sha256").update(req.user.id + "|" + nconf.get("share_secret")).digest("hex").substr(0, 16);			
+			var urlKey = encodeURIComponent(new Buffer(hash + "|" + req.user.id).toString("base64"));
+			data.urlFor = (f) => {
+				return nconf.get("url") + "/file/" + urlKey + "/" + encodeURIComponent(f);
+			};
 			_util.renderPage(req, res, nconf, "index", data);
 		});
 	});
@@ -26,31 +32,6 @@ module.exports = function(nconf)
 		}
 
 		_util.renderPage(req, res, nconf, "info", { render_menubar: false });
-	});
-
-	router.get("/restricted", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.RESTRICTED), (req, res) => {
-		books.getBooks(nconf, false, true, (books) => {
-			data.restricted = true;
-			_util.renderPage(req, res, nconf, "index", data);
-		});
-	});
-
-	router.get("/restricted/info", _util.checkAccount(nconf), (req, res) => {
-		var isCool = _util.userInServers(req, nconf, true);
-		_util.renderPage(req, res, nconf, "restricted_info", { isCool: isCool });
-	});
-
-	// restricted files can't be shared, so we don't need any faux-crypto
-	router.get("/file/restricted/:name", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.RESTRICTED), (req, res) => {
-		var name = _util.sanitizeName(req.params.name);
-		var p = path.join(nconf.get("restricted_path"), name);
-		if(!fs.existsSync(p))
-		{
-			res.status(404).send("not found");
-			return;
-		}
-
-		res.sendFile(p);
 	});
 
 	// download book
@@ -68,83 +49,13 @@ module.exports = function(nconf)
 			return res.status(403).send("access denied - let me know");
 
 		var name = req.params.name;
-		var p = path.join(nconf.get("path"), name);
-		if(!fs.existsSync(p))
-		{
-			res.status(404).send("not found");
-			return;
-		}
-
-		res.sendFile(p);
-	});
-
-	// redirect with code
-	router.get("/file/:name", _util.checkAccount(nconf), (req, res) => {
-		var hash = crypto.createHash("sha256").update(req.user.id + "|" + nconf.get("share_secret")).digest("hex").substr(0, 16);
-		var data = hash + "|" + req.user.id;
-		var name = _util.sanitizeName(req.params.name);
-		res.redirect(nconf.get("url") + "/file/" + encodeURIComponent(new Buffer(data).toString("base64")) + "/" + encodeURIComponent(name));
-	});
-
-	// unsorted books
-	router.get("/unsorted.json", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.ADMIN), (req, res) => {
-		books.getUnsortedBooks(nconf, req.query.restricted, (unsorted) => {
-			var dict = {};
-			unsorted.forEach((b) => {
-				dict[b.name] = {
-					name: b.name,
-					authors: ["Unknown"],
-					category: "Other"
-				};
-			});
-			res.json(dict);
-		});
-	});
-
-	// a logged in admin user can visit this url to reload the config file
-	// bad solution...
-	router.get("/reload", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.ADMIN), (req, res) => {
-		nconf.file({ file: "config.json" });
-		res.send("reloaded ok");
-	});
-
-	router.get("/opfs", _util.checkAccount(nconf, _util.PERMISSION_LEVELS.ADMIN), (req, res) => {
-		var files = fs.readdirSync("data")
-			.filter((f) => f.substr(-3) == "opf");
-		var opfs = files
-			.map((f) => fs.readFileSync("data/" + f, "utf8"))
-			.map((f) => { return (cb) => xml2js.parseString(f, cb) });
-
-		async.parallel(opfs, (err, results) => {
-			if(err) throw err;
-
-			var books = {};
-			for(var i = 0; i < results.length; i++)
+		aws(nconf).getBook(name, (err, url) => {
+			if(err)
 			{
-				var filename = files[i];
-				var data = results[i];
-				var title = data.package.metadata[0]["dc:title"][0];
-				var authors = 
-					data.package.metadata[0]["dc:creator"]
-					.map((a) => {
-						var name = a["_"];
-						var parts = name.split(",");
-						if(parts.length == 2)
-						{
-							name = parts[1].trim() + " " + parts[0].trim();
-						}
-
-						return name;
-					});
-
-				books[path.basename(filename, ".opf")] = {
-					name: title,
-					authors: authors,
-					category: "Other"
-				};
+				throw err;
 			}
 
-			res.json(books);
+			res.redirect(url);
 		});
 	});
 

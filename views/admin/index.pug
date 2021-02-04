@@ -1,0 +1,12 @@
+extends admin_layout
+block admin_body
+	form(method="POST",action=nconf.get("url") + "/admin/reload").inline-form
+		input(type="submit",value="Reload Config")
+	form(method="POST",action=nconf.get("url") + "/admin/cache/clear").inline-form
+		input(type="submit",value="Clear File Cache")
+	p
+		ul
+			li 
+				a(href=nconf.get("url") + "/admin/unsorted.json") Unsorted Books
+			li
+				a(href=nconf.get("url") + "/admin/opfs") OPFs

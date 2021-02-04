@@ -149,3 +149,25 @@ a:hover
 	margin-right: 5px;
 	color: #aaa;
 }
+
+button,input[type=submit],input[type=button]
+{
+	color: white;
+	border: none;
+	border-radius: 5px;
+	background: #0093ca;
+	padding: 10px;
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
+button:hover,input[type=submit]:hover,input[type=button]:hover
+{
+	background: #00749f;
+	cursor: pointer;
+}
+
+form.inline-form
+{
+	display: inline;
+}

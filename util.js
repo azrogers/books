@@ -1,4 +1,5 @@
-var path = require("path");
+var path = require("path"),
+	sanitize = require("sanitize-filename");
 
 const PERMISSION_LEVELS = {
 	NONE: 0,
@@ -11,6 +12,7 @@ function renderPage(req, res, nconf, name, params)
 {
 	params = params || {};
 	params.user = req.user;
+	params.isAdmin = req.user == null ? false : req.user.admin;
 	params.nconf = nconf;
 	params.root_url = nconf.get("url");
 	res.render(name, params);
@@ -99,7 +101,7 @@ exports.sortTitle = function sortTitle(title)
 
 exports.sanitizeName = function(p) 
 {
-	return p.replace(new RegExp(path.sep, "g"), "");
+	return sanitize(p);
 }
 
 exports.renderPage = renderPage;

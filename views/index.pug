@@ -20,7 +20,7 @@ block body
 										if restricted
 											a(href=(nconf.get("url")) + "/file/restricted/" + encodeURIComponent(book.file + "." + ext))= ext
 										else
-											a(href=(nconf.get("url") + "/file/" + encodeURIComponent(book.file + "." + ext)))= ext
+											a(href=urlFor(book.file + "." + ext))= ext
 								else
 									span(id="book-view-" + book.keyId).book-hidden-display [+]
 						if book.isSeries
@@ -36,7 +36,7 @@ block body
 												if restricted
 													a(href=(nconf.get("url")) + "/file/restricted/" + encodeURIComponent(bk.file + "." + ext))= ext
 												else
-													a(href=(nconf.get("url") + "/file/" + encodeURIComponent(bk.file + "." + ext)))= ext
+													a(href=urlFor(book.file + "." + ext))= ext
 
 					if category == "Other" && unsortedCount > 0
 						div.book
