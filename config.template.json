@@ -2,14 +2,24 @@
 	"discord": {
 		"id": "",
 		"secret": "",
-		"servers": [
-		]
+		"servers": [],
+		"users": [],
+		"token": ""
 	},
-	"path": "",
+	"s3": {
+		"endpoint": "https://s3.wasabisys.com",
+		"id": "",
+		"secret": "",
+		"bucket": ""
+	},
+	"path": "D:/node/books/data",
 	"port": 3001,
 	"secret": "",
 	"share_secret": "",
 	"url": "http://localhost:3001",
 	"share_length": 3600,
-	"title": "books"
+	"title": "books",
+	"admins": [],
+	"db_path": "./db",
+	"testing": true
 }
