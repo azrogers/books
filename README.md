@@ -12,9 +12,15 @@ A file named `config.template.json` is provided with this source code. To set up
     "discord": {
         "id": "", // the ID of your Discord app (create in Discord API)
         "secret": "", // your Discord API secret
-        "servers": [ // a list of IDs of servers (as strings). users must be in one of these to access books
-        ]
+        "servers": [], // a list of IDs of servers (as strings). users must be in one of these servers to access books
+        "users": [] // a list of IDs of users (as strings) to specifically whitelist. users listed here don't need to be in any of the above servers to access books
     },
+    "s3": {
+        "endpoint": "https://s3.wasabisys.com", // the S3-compatible endpoint to use
+        "id": "", // the AWS access key for the bucket used to store books
+        "secret": "", // the AWS secret key for the bucket used to store books
+        "bucket": "" // the bucket used to store books
+    }
     "path": "", // the path to the data folder (see next section)
     "port": 3001,
     "secret": "", // should be a random string, used for sessions
@@ -27,9 +33,9 @@ A file named `config.template.json` is provided with this source code. To set up
 
 ## Data
 
-To add books to this directory you must place them in a data folder, specified by the `data` field in the config file. Books can be of any file type you wish, and you can include multiple file types of the same book (as long as they have the same file name).
+Books are now stored in an S3-compatible bucket specified in the config file. Books can be of any file type you wish, and you can include multiple file types of the same book (as long as they have the same file name).
 
-Inside your data folder must be a JSON file named `books.json`, which specifies the metadata for every book. The file should look something like this:
+Inside your `data` folder must be a JSON file named `books.json`, which specifies the metadata for every book. The file should look something like this:
 ```js
 {
     "_categories": ["Fiction", "Non-Fiction", "Other"],
@@ -41,7 +47,7 @@ Inside your data folder must be a JSON file named `books.json`, which specifies 
 }
 ```
 
-For example, if I added "Tunnel in the Sky" by Robert A. Heinlein to the directory, and I had it in epub, mobi, pdf, and htmlz formats, I would add every format to the data directory under the name "Tunnel in the Sky" (so "Tunnel in the Sky.pdf", "Tunnel in the Sky.epub", etc) and I'd add this to books.json:
+For example, if I added "Tunnel in the Sky" by Robert A. Heinlein to the bucket, and I had it in epub, mobi, pdf, and htmlz formats, I would add every format to the bucket under the name "Tunnel in the Sky" (so "Tunnel in the Sky.pdf", "Tunnel in the Sky.epub", etc) and I'd add this to books.json:
 ```js
 {
     "_categories": ["Fiction", "Other"],
@@ -53,10 +59,10 @@ For example, if I added "Tunnel in the Sky" by Robert A. Heinlein to the directo
 }
 ```
 
-Now, all four formats will be under the same listing in the directory, under the "Fiction" category.
+Now, all four formats will be under the same listing, under the "Fiction" category.
 
 ## License
-Copyright 2020 Ashley Rogers
+Copyright 2023 Ashley Rogers
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
