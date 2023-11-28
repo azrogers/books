@@ -20,7 +20,7 @@ A file named `config.template.json` is provided with this source code. To set up
         "id": "", // the AWS access key for the bucket used to store books
         "secret": "", // the AWS secret key for the bucket used to store books
         "bucket": "" // the bucket used to store books
-    }
+    },
     "path": "", // the path to the data folder (see next section)
     "port": 3001,
     "secret": "", // should be a random string, used for sessions
